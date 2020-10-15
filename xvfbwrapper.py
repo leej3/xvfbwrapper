@@ -70,11 +70,7 @@ class Xvfb(object):
         self.stop()
 
     def start(self):
-        if self.new_display is not None:
-            if not self._get_lock_for_display(self.new_display):
-                raise ValueError("Could not lock display :{0}".format(self.new_display))
-        else:
-            self.new_display = self._get_next_unused_display()
+        self.new_display = self._get_next_unused_display()
         display_var = ':{}'.format(self.new_display)
         self.xvfb_cmd = ['Xvfb', display_var] + self.extra_xvfb_args
         with open(os.devnull, 'w') as fnull:
@@ -160,10 +156,11 @@ class Xvfb(object):
         :return: free display number
         '''
         while True:
-            rand = randint(1, self.__class__.MAX_DISPLAY)
-            if self._get_lock_for_display(rand):
-                return rand
+            display = self.new_display or randint(1, self.__class__.MAX_DISPLAY)
+            if self._get_lock_for_display(display):
+                self.new_display = display
             else:
+                self.new_display = None
                 continue
 
     def _set_display(self, display_var):
